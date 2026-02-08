@@ -110,24 +110,25 @@
                 </div>
             </div>
             
-            <div id="admin-area">
-                <h3 style="font-size: 0.6rem; letter-spacing: 2px; opacity: 0.4; margin-bottom: 15px; text-transform: uppercase;">Daten-Verwaltung</h3>
-                
-                <button class="btn" onclick="exportLogbuchData()" style="background: var(--details); font-size: 0.75rem; padding: 12px 25px; border-radius: 10px; width: 220px; margin-bottom: 10px;">
-                    📥 DATEN EXPORTIEREN
-                </button>
-                
-                <br>
+<div id="admin-area" style="text-align: center; margin-top: 50px; padding: 30px 15px; border-top: 2px dashed #e2e8e7; background: rgba(0,0,0,0.03); border-radius: 20px; width: 100%; position: relative; z-index: 100;">
+    <h3 style="font-size: 0.6rem; letter-spacing: 2px; opacity: 0.4; margin-bottom: 15px; text-transform: uppercase; color: #1a302b;">Daten-Verwaltung</h3>
+    
+    <button class="btn" onclick="exportLogbuchData()" style="background: #4a635d; color: white; border: none; font-size: 0.75rem; padding: 12px 25px; border-radius: 10px; width: 220px; margin-bottom: 15px; font-weight: bold; cursor: pointer;">
+        📥 DATEN EXPORTIEREN
+    </button>
+    
+    <br>
 
-                <button class="btn btn-logout" 
-                        onclick="if(confirm('App wirklich sperren? Du musst den Key danach neu eingeben.')){localStorage.removeItem('logbuch_access'); window.location.reload();}">
-                    🔓 JETZT ABMELDEN
-                </button>
+    <button class="btn" 
+            onclick="if(confirm('App wirklich sperren?')){localStorage.removeItem('logbuch_access'); window.location.reload();}" 
+            style="background: #c0392b; color: white; border: none; font-size: 0.75rem; padding: 12px 25px; border-radius: 10px; width: 220px; font-weight: bold; cursor: pointer;">
+        🔓 JETZT ABMELDEN
+    </button>
 
-                <p style="font-size: 0.55rem; color: #999; margin-top: 15px; line-height: 1.5; max-width: 280px; margin-left: auto; margin-right: auto;">
-                    <b>DATENSCHUTZ:</b> Abmelden löscht nur die aktuelle Sitzung. Deine Einträge bleiben auf diesem Gerät gespeichert.
-                </p>
-            </div>
+    <p style="font-size: 0.55rem; color: #999; margin-top: 15px; line-height: 1.5; max-width: 280px; margin-left: auto; margin-right: auto;">
+        <b>SICHERHEIT:</b> Abmelden löscht nur die Sitzung. Deine Einträge bleiben auf diesem Gerät gespeichert.
+    </p>
+</div>
 
             <div class="save-indicator">
                 <div id="save-dot" class="status-dot"></div> 
@@ -264,3 +265,4 @@
     </script>
 </body>
 </html>
+
