@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Logbuch | Lais Brandmähl</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="logo.png">
+    
+    <style>
+        /* Extra-Styles für die neuen Funktionen */
+        .clear-link-new {
+            font-size: 0.65rem;
+            color: var(--accent-orange);
+            cursor: pointer;
+            font-weight: bold;
+            opacity: 0.7;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .clear-link-new:hover { opacity: 1; }
+        
+        #admin-area {
+            text-align: center;
+            margin-top: 50px;
+            padding: 30px 15px;
+            border-top: 2px dashed #e2e8e7;
+            background: rgba(0,0,0,0.03);
+            border-radius: 20px;
+            width: 100%;
+            position: relative; 
+            z-index: 100;
+        }
+    </style>
+
+    <script src="config.js"></script>
+    <script src="date-logic.js"></script>
+    <script src="signature-pad.js"></script>
+    <script src="signature-modal.js"></script>
+</head>
+<body oncontextmenu="return false;">
+
+    <div id="auth-screen" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-color); z-index:9999; flex-direction:column; align-items:center; justify-content:center; padding:20px;">
+        <div class="page" style="max-width:400px; text-align:center; border-top: 10px solid var(--accent-orange);">
+            <h2 style="color:var(--text-color); letter-spacing: 2px;">LOGBUCH LOGIN</h2>
+            <p style="font-size: 0.8rem; opacity: 0.6; margin-bottom: 20px;">Bitte Lizenz-Key eingeben</p>
+            <input type="text" id="license-input" placeholder="Key eingeben..." style="width:100%; padding:15px; border-radius:12px; border:1px solid var(--element-bg); text-align:center; font-size:1rem; margin-bottom:15px; background: #fff;">
+            <button class="btn" onclick="checkAccess()" style="width:100%;">AKTIVIEREN</button>
+            <p id="error-msg" style="color:var(--accent-orange); font-size:0.8rem; margin-top:15px; display:none; font-weight: bold;">Zugriff verweigert!</p>
+        </div>
+    </div>
+
+    <div id="main-app" style="display:none; width:100%; flex-direction:column; align-items:center;">
+        
+        <div class="nav">
+            <button class="btn" onclick="changeWeek(-7)">←</button>
+            <div id="week-label" style="font-weight:bold; color:var(--text-color); text-align:center;">Woche</div>
+            <button class="btn" onclick="changeWeek(7)">→</button>
+        </div>
+
+        <div class="page">
+            <div style="text-align:center; margin-bottom:25px;">
+                <h2 style="margin:0; letter-spacing:4px; font-weight:900; color:var(--text-color);">LOGBUCH</h2>
+                <div style="font-size:0.6rem; opacity:0.6; margin-top:5px; font-weight: bold; letter-spacing: 1px;">
+                    © 2026 LAIS BRANDMÄHL · VERSION 2.0
+                </div>
+                <div style="height:3px; width:50px; background:var(--accent-orange); margin:12px auto; border-radius:2px;"></div>
+            </div>
+            
+            <div id="planner-content"></div>
+
+            <div class="footer-info">
+                <div class="box">
+                    <label>FEHLENDE HAUSAUFGABEN</label>
+                    <textarea id="extra_ha" rows="3" oninput="saveExtra('ha')"></textarea>
+                </div>
+                <div class="box">
+                    <label>BEMERKUNGEN / FAIRNESS</label>
+                    <textarea id="extra_fairness" rows="3" oninput="saveExtra('fairness')"></textarea>
+                </div>
+            </div>
+
+            <div class="signature-section">
+                <div class="box">
+                    <label>UNTERSCHRIFT LEHRKRAFT</label>
+                    <div class="canvas-wrapper" onclick="SignatureModal.open('sig-teacher', 'sig_t_'+DateUtils.formatKey(currentMonday))">
+                        <canvas id="sig-teacher"></canvas>
+                    </div>
+                    <div style="text-align: right; margin-top: 8px;">
+                        <span class="clear-link-new" onclick="event.stopPropagation(); SignaturePad.clear('sig-teacher', 'sig_t_'+DateUtils.formatKey(currentMonday))">✕ Feld leeren</span>
+                    </div>
+                </div>
+                <div class="box">
+                    <label>UNTERSCHRIFT ELTERN</label>
+                    <div class="canvas-wrapper" onclick="SignatureModal.open('sig-parents', 'sig_p_'+DateUtils.formatKey(currentMonday))">
+                        <canvas id="sig-parents"></canvas>
+                    </div>
+                    <div style="text-align: right; margin-top: 8px;">
+                        <span class="clear-link-new" onclick="event.stopPropagation(); SignaturePad.clear('sig-parents', 'sig_p_'+DateUtils.formatKey(currentMonday))">✕ Feld leeren</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="admin-area">
+                <h3 style="font-size: 0.6rem; letter-spacing: 2px; opacity: 0.4; margin-bottom: 15px; text-transform: uppercase;">Daten-Verwaltung</h3>
+                
+                <button class="btn" onclick="exportLogbuchData()" style="background: #4a635d; color: white; border: none; font-size: 0.75rem; padding: 12px 25px; border-radius: 10px; width: 220px; margin-bottom: 12px; font-weight: bold; cursor: pointer;">
+                    📥 DATEN EXPORTIEREN
+                </button>
+                
+                <br>
+
+                <button class="btn" 
+                        onclick="if(confirm('App wirklich sperren?')){localStorage.removeItem('logbuch_access'); window.location.reload();}" 
+                        style="background: #c0392b; color: white; border: none; font-size: 0.75rem; padding: 12px 25px; border-radius: 10px; width: 220px; font-weight: bold; cursor: pointer;">
+                    🔓 JETZT ABMELDEN
+                </button>
+
+                <p style="font-size: 0.55rem; color: #999; margin-top: 15px; line-height: 1.5; max-width: 280px; margin-left: auto; margin-right: auto;">
+                    <b>SICHERHEIT:</b> Abmelden löscht nur die Sitzung. Deine Einträge bleiben auf diesem Gerät gespeichert.
+                </p>
+            </div>
+
+            <div class="save-indicator">
+                <div id="save-dot" class="status-dot"></div> 
+                <span>Lokal gesichert</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentMonday = DateUtils.getMonday(new Date());
+
+        function checkAccess() {
+            const input = document.getElementById('license-input').value.trim().toLowerCase();
+            if (APP_CONFIG.validKeys.includes(input)) {
+                localStorage.setItem('logbuch_access', 'true');
+                initApp();
+            } else {
+                document.getElementById('error-msg').style.display = 'block';
+            }
+        }
+
+        function initApp() {
+            const hasAccess = localStorage.getItem('logbuch_access') === 'true';
+            document.getElementById('auth-screen').style.display = hasAccess ? 'none' : 'flex';
+            document.getElementById('main-app').style.display = hasAccess ? 'flex' : 'none';
+            if(hasAccess) { render(); }
+        }
+
+        function render() {
+            const container = document.getElementById('planner-content');
+            container.innerHTML = '';
+            let friday = new Date(currentMonday); 
+            friday.setDate(currentMonday.getDate() + 4);
+            document.getElementById('week-label').innerText = currentMonday.toLocaleDateString('de-DE', {day:'2-digit', month:'2-digit'}) + " bis " + friday.toLocaleDateString('de-DE', {day:'2-digit', month:'2-digit', year:'numeric'});
+            
+            const tage = ["MO", "DI", "MI", "DO", "FR"];
+            for (let i = 0; i < 5; i++) {
+                let d = new Date(currentMonday); d.setDate(currentMonday.getDate() + i);
+                let dateKey = DateUtils.formatKey(d);
+                let isToday = DateUtils.isToday(d);
+                container.innerHTML += `
+                    <div class="day-container" style="${isToday ? 'border: 2px solid var(--accent-orange);' : ''}">
+                        <div class="day-header"><span>${tage[i]}</span><span style="opacity: 0.5;">${d.toLocaleDateString('de-DE', {day:'2-digit', month:'2-digit'})}.</span></div>
+                        <div id="tasks-${dateKey}">${renderTasks(dateKey)}</div>
+                        <button class="add-task-btn" onclick="addTask('${dateKey}')">+ Zeile</button>
+                    </div>`;
+            }
+            updateExtraFields();
+            setTimeout(() => {
+                SignaturePad.load('sig-teacher', 'sig_t_' + DateUtils.formatKey(currentMonday));
+                SignaturePad.load('sig-parents', 'sig_p_' + DateUtils.formatKey(currentMonday));
+            }, 150);
+        }
+
+        function renderTasks(dateKey) {
+            let tasks = JSON.parse(localStorage.getItem('tasks_'+dateKey) || '[]');
+            if(tasks.length === 0) tasks = [{text:"", done:false}];
+            return tasks.map((t, idx) => `
+                <div class="task-row">
+                    <input type="checkbox" onchange="updateTask('${dateKey}',${idx},'done',this.checked)" ${t.done?'checked':''}>
+                    <input type="text" placeholder="Aufgabe..." class="${t.done?'completed':''}" value="${t.text}" oninput="updateTask('${dateKey}',${idx},'text',this.value)">
+                    <button class="delete-btn" onclick="deleteTask('${dateKey}',${idx})">&times;</button>
+                </div>`).join('');
+        }
+
+        function addTask(dateKey) {
+            let tasks = JSON.parse(localStorage.getItem('tasks_'+dateKey) || '[]');
+            tasks.push({text: "", done: false});
+            localStorage.setItem('tasks_'+dateKey, JSON.stringify(tasks));
+            render();
+        }
+
+        function deleteTask(dateKey, idx) {
+            let tasks = JSON.parse(localStorage.getItem('tasks_'+dateKey));
+            tasks.splice(idx, 1);
+            localStorage.setItem('tasks_'+dateKey, JSON.stringify(tasks));
+            render();
+        }
+
+        function updateTask(dateKey, idx, field, val) {
+            let tasks = JSON.parse(localStorage.getItem('tasks_'+dateKey));
+            tasks[idx][field] = val;
+            localStorage.setItem('tasks_'+dateKey, JSON.stringify(tasks));
+            if(field === 'done') render();
+            showSaveStatus();
+        }
+
+        function updateExtraFields() {
+            let wId = DateUtils.formatKey(currentMonday);
+            document.getElementById('extra_ha').value = localStorage.getItem('ha_'+wId) || "";
+            document.getElementById('extra_fairness').value = localStorage.getItem('fairness_'+wId) || "";
+        }
+
+        function saveExtra(type) {
+            let wId = DateUtils.formatKey(currentMonday);
+            localStorage.setItem(type+'_'+wId, document.getElementById('extra_'+type).value);
+            showSaveStatus();
+        }
+
+        function showSaveStatus() {
+            let dot = document.getElementById('save-dot');
+            dot.style.opacity = 1;
+            setTimeout(() => dot.style.opacity = 0, 800);
+        }
+
+        function changeWeek(days) {
+            currentMonday.setDate(currentMonday.getDate() + days);
+            render();
+        }
+
+        function exportLogbuchData() {
+            let allData = "--- DIGITALES LOGBUCH BACKUP (LAIS BRANDMÄHL) ---\n";
+            allData += "Exportiert am: " + new Date().toLocaleString() + "\n";
+            allData += "--------------------------------------------------\n\n";
+            for (let i = 0; i < localStorage.length; i++) {
+                let key = localStorage.key(i);
+                if (key.includes('tasks_') || key.includes('ha_') || key.includes('fairness_')) {
+                    allData += "[" + key + "]: " + localStorage.getItem(key) + "\n";
+                }
+            }
+            const blob = new Blob([allData], { type: 'text/plain' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'Logbuch_Backup_Lais.txt';
+            a.click();
+        }
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch(err => console.log("SW Fehler", err));
+            });
+        }
+        initApp();
+    </script>
+</body>
+</html>
